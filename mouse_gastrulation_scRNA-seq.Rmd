@@ -1,6 +1,6 @@
 ---
 title: "Mouse Gastrulation scRNA-seq Data Analysis"
-output: html_notebook
+output: html_document
 Author: Huei Teng Ng
 ---
 
