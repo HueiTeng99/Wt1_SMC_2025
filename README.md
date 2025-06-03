@@ -6,9 +6,9 @@ Analysis pipeline for assessing vascular density and branching in whole-mount E1
 # Repository Content
 
 ## R Markdown
-R markdown for single cell analysis, CD31 density and branching analysis
+[R markdown](./R Markdown) for single cell analysis, CD31 density and branching analysis
 
-## Datafiles
+## [Datafiles](./Datafiles)
 master_gene_count.csv- CSV file contains processed gene expression counts for Wt1 and its associated marker genes from the raw data, organized by each embryonic stage and cell types.
 
 CD31_density_master_data.csv-  CSV file contains surface area of CD31 and total area of ROI in Wt1 knock-out and controls.
