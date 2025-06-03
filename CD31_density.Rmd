@@ -1,0 +1,76 @@
+---
+title: "CD31 Density Analysis of Whole-Mount E12.5 Mouse Intestine"
+output: html_notebook
+Author: Huei Teng Ng
+---
+
+The code below showed workflow of blood vessels density analysis from "paper" (DOI). 
+
+The raw data file contains 1)volume of CD31 and total area of ROI in unit and pixels. 2) surface area of CD31 and total area of ROI in unit and pixels. 3) corrected surface area in pixels. 
+Processed data file was written into CD31_master_data.csv
+
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+library(tidyr)
+library(dplyr)
+library(factoextra)
+library(FactoMineR)
+library(outliers)
+library(ggforce)
+
+
+raw_df<- read.csv(file='~/R script/Mouse_Gastrulation_sc/submission_files/CD31_density_raw_data.csv', row.names = 1)
+head(raw_df,n=5)
+```
+
+
+```{r}
+#We first convert the long data file to wider format and calculate CD31 density in percentage in pixels.
+master_summary <- raw_df[,c(3,7:11)] %>%pivot_wider(names_from = Channel, values_from = `Vol..pix.`) %>%group_by(Field)%>%mutate(CD31_percentage = (CD31 / `Total Area`)*100) 
+ #written as CD31_density_master_data.csv
+head(master_summary,10)
+```
+
+```{r}
+#visualising spread of data in each sample
+master_summary$grouping<- paste(master_summary$Group, master_summary$Sample, sep='_') #concatenate sample name with group 
+master_summary$Group<- factor(master_summary$Group, levels=c('Control','KO@E7.5'), ordered=T) #reorder group
+ggplot(master_summary, aes(x=grouping, y=CD31_percentage))+ geom_boxplot()+ theme_bw()+ geom_point()+
+  ylab('Density of CD31 (%)')+ theme(axis.text.x = element_text(angle=90), axis.title.x=element_blank(), axis.text=element_text(size=8))
+
+```
+```{r}
+##Check batch-effects (using total area and CD31)
+batch_test<- master_summary[,c(4:6,8)]
+Group<- master_summary$Group
+Batch<- as.factor(master_summary$Batch)
+batch_test$grouping<- as.numeric(as.factor(batch_test$grouping))
+pca_result <- PCA(batch_test, graph = FALSE)
+pca_data <- as.data.frame(pca_result$ind$coord)
+ggplot(pca_data, aes(x = Dim.1, y = Dim.2, color = Group, shape=Batch)) + geom_point(size = 3, alpha = 0.7) +scale_shape_manual(values = c(15, 16,17,18))+
+  labs(x = "PC1", y = "PC2") + theme_minimal() + scale_colour_manual(values=c('#AD9024','#AC7299'))+ theme(axis.text=element_text(size=8))
+
+```
+```{r}
+#Calculate mean for each sample----
+mean_summary<- master_summary%>% group_by(grouping)%>%mutate('mean_CD31_percentage'=mean(CD31_percentage))
+mean_summary<- unique(mean_summary[,c(1,3,8,9)])
+mean_summary
+
+#violin plot for distribution of data
+ggplot(mean_summary, aes(x=Group, y=mean_CD31_percentage))+ geom_violin()+ theme_bw()+ geom_dotplot(aes(fill=Sample),stackdir = "center",binaxis = "y",dotsize=1.5)+
+  ylab('Density of CD31 (%)')+ theme(axis.text.x = element_text(angle=90), axis.title.x=element_blank(), axis.text=element_text(size=8))
+
+```
+
+```{r}
+#calculate std and variance
+sd<- master_summary%>%group_by(Group)%>% mutate('Std.Dev'=sd(CD31_percentage))
+sd<- sd%>%group_by(Group)%>% mutate('Mean'=mean(CD31_percentage))
+sd<-sd%>%group_by(Group)%>% mutate('Variance'=var(CD31_percentage))
+head(sd, n=10)
+```
+
+
