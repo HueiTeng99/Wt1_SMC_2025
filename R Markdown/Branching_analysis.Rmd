@@ -1,0 +1,76 @@
+---
+title: "Vessels Branching Analysis of Whole-Mount E12.5 Mouse Intestine"
+output: html_notebook
+Author: Huei Teng Ng
+---
+
+The code below showed workflow of blood vessels branching analysis analysis of whole-mount mouse intestine from "paper" (DOI). 
+```{r}
+master_df_branching<- read.csv(file = "~/R script/Mouse_Gastrulation_sc/submission_files/raw_branch_result.csv", row.names=1)
+head(master_df_branching,n=5)
+```
+
+```{r}
+#count type of voxels per group####
+voxels_summary<- as.data.frame(matrix(ncol=7, nrow=2))
+colnames(voxels_summary)<-c('Branches','Junctions','End_points_Voxels','Junction_Voxels','Slab_Voxels','Triple_Points','Quadruple_Points')
+row.names(voxels_summary)<-c('Control','KO@E7.5')
+
+voxels_name<-colnames(voxels_summary)
+for(col in voxels_name){
+  KO<-subset(master_df_branching, Group=='KO@E7.5')
+  PC<-subset(master_df_branching, Group=='Control')
+  voxels_summary['KO@E7.5',col]<- round(sum(KO[,col])/6) #averaged by sample size
+  voxels_summary['Control',col]<- round(sum(PC[,col])/4)
+}
+
+voxels_summary$Group<- row.names(voxels_summary)
+voxels_summary<- voxels_summary%>%pivot_longer(!Group, names_to = 'Voxels_Type',values_to = 'Average_Count')
+head(voxels_summary,n=10)
+
+#plot to visualise
+ggplot(voxels_summary, aes(x=Voxels_Type, y=Average_Count, fill=Group))+ geom_bar(position='dodge', stat='identity')+ theme_bw()+
+  ylab('Mean cumulative')+ theme(axis.text.x = element_text(angle=90), axis.title.x = element_blank())+ scale_fill_manual(values=c('#CEB152','#CA95B8'))+
+  theme(axis.text = element_text(size=8))
+
+```
+```{r}
+#Distribution of each sample####
+for(col in voxels_name){
+  varname<-paste0('Sum_',col)
+  master_df_branching<- master_df_branching%>%group_by(replicate)%>% mutate(!!varname:= sum(.data[[col]]))
+}
+voxels_summary<- unique(master_df_branching[,c(10:20)])
+
+voxels_name<-colnames(voxels_summary)[5:11]
+for(col in voxels_name){
+  varname<-paste0('average_',col)
+  voxels_summary<- voxels_summary%>%group_by(sample)%>% mutate(!!varname:= sum(.data[[col]]))
+}
+
+voxels_summary<- unique(voxels_summary[,c(2:4,12:18)])
+colnames(voxels_summary)<- c('Group','Batch','sample','Branches','Junctions','End_points_Voxels','Junction_Voxels','Slab_Voxels','Triple_Points','Quadruple_Points')
+voxels_summary<- voxels_summary%>% pivot_longer(!c(Group, sample, Batch), values_to='Average Count',names_to='Voxels_Type')
+head(voxels_summary, n=10)
+
+#visualise
+ggplot(voxels_summary, aes(x=Voxels_Type, y=`Average Count`, fill=Group))+ geom_boxplot()+ theme_bw()+
+  ylab('Average Count')+ theme(axis.text.x = element_text(angle=90), axis.title.x = element_blank(), axis.text = element_text(size=8))+
+  ylim(0,280000)+geom_sina(size=1) + scale_fill_manual(values=c('#CEB152','#CA95B8'))
+
+```
+
+
+```{r}
+#calculate std and variance
+sd<- voxels_summary%>%group_by(Group,Voxels_Type)%>%mutate('Std.Dev'=sd(`Average Count`))
+sd<- sd%>%group_by(Group,Voxels_Type)%>% mutate('Mean'=mean(`Average Count`))
+sd<-sd%>%group_by(Group,Voxels_Type)%>% mutate('Variance'=var(`Average Count`))
+
+sd<- unique(sd[,c(1,4,6:8)])
+sd<- sd%>% mutate('CV(%)'=(Std.Dev/Mean)*100)
+head(sd,n=5)
+```
+
+
+
