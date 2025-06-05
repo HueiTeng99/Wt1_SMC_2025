@@ -1,6 +1,6 @@
 # Overview
 
-This respository shows single cell analysis on gastrulation stage mouse embryo (E6.5-E8.5), focusing of the relationship of Wt1 with smooth muscle and mesothelial marker genes. 
+This respository contains single cell analysis on gastrulation stage mouse embryo (E6.5-E8.5), focusing of the relationship of Wt1 with smooth muscle and mesothelial marker genes. 
 Analysis pipeline for assessing vascular density and branching in whole-mount E12.5 mouse embryo with Wt1 knock-out at E7.5 also included.
 
 # Repository Content
