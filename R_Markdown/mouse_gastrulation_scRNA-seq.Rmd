@@ -13,7 +13,6 @@ library(tidyverse)
 library(AUCell)
 library(GSEABase)
 library(paletteer)
-library(DESeq2)
 library(ggpubr)
 
 
